@@ -1,0 +1,6 @@
+
+tls:
+  enabled: true
+  server_cert: certs/server.crt
+  server_key: certs/server.key
+  client_ca: certs/ca.crt   # set if you want to enforce mTLS

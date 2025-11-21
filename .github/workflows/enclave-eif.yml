@@ -1,0 +1,21 @@
+
+name: Build EIF & Upload to S3
+on:
+  workflow_dispatch: {}
+  push: { branches: [ main ], paths: ['enclave/**','docker/Dockerfile.coordinator','coordinator/**','mpclib/**','model/**','requirements.txt'] }
+jobs:
+  build-eif:
+    runs-on: ubuntu-22.04
+    permissions: { id-token: write, contents: read }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with: { role-to-assume: ${{ secrets.AWS_OIDC_ROLE_ARN }}, aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }} }
+      - run: |
+          sudo apt-get update && sudo apt-get install -y docker.io
+          sudo usermod -aG docker $USER
+      - run: docker build -f docker/Dockerfile.coordinator --build-arg MPCPROMPT_SECURITY_CFG=configs/security.yaml -t ghcr.io/${{ github.repository_owner }}/mpcprompt-coordinator:enclave .
+      - run: |
+          sudo enclave/build_eif.sh ghcr.io/${{ github.repository_owner }}/mpcprompt-coordinator:enclave coordinator.eif
+          ls -lh coordinator.eif
+      - run: aws s3 cp coordinator.eif s3://${{ secrets.S3_BUCKET }}/enclaves/coordinator.eif --acl private

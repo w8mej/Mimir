@@ -1,0 +1,37 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Environment settings
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Install dependencies (only what is required)
+RUN pip install --no-cache-dir streamlit==1.38.0
+
+# Copy application code
+COPY model /app/model
+COPY client /app/client
+
+# --- Security hardening: create non-root user ---
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+RUN chown -R appuser:appuser /app
+
+# Drop privileges
+USER appuser
+
+# Expose Streamlit default port
+EXPOSE 8501
+
+# --- Healthcheck ---
+# Checks the Streamlit web endpoint (or any HTTP service on port 8501)
+# every 30s, with a 5s timeout and 3 retries before marking unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD python -c "import urllib.request,sys; \
+  import socket; \
+  socket.setdefaulttimeout(3); \
+  urllib.request.urlopen('http://127.0.0.1:8501/') or sys.exit(1)"
+
+# Default command (placeholder for PoC)
+CMD ["python", "-c", "print('Web UI placeholder. Use gRPC CLI client in this PoC.')"]

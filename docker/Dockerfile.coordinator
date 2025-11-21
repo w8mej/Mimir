@@ -1,0 +1,33 @@
+FROM python:3.11-slim AS base
+
+# Set up working directory
+WORKDIR /app
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    MIMIR_SECURITY_CFG=configs/security.yaml
+
+# Copy requirements first for build cache efficiency
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy application source
+COPY . /app
+
+# --- Security hardening: create a non-root user ---
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Expose ports for gRPC / metrics / admin
+EXPOSE 8080 9090 8081
+
+# --- Healthcheck ---
+# Probe Prometheus /metrics endpoint on port 9090.
+# Marks the container unhealthy after 3 consecutive failures.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9090/metrics', timeout=3)" || exit 1
+
+# Run the coordinator under the non-root user
+CMD ["python", "coordinator/grpc_server.py"]

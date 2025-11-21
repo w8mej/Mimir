@@ -1,0 +1,56 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "schemaVersion": 37,
+  "version": 1,
+  "title": "Mimir",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Generation Steps",
+      "targets": [
+        {
+          "expr": "increase(mpcprompt_generation_steps_total[5m])"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Generated Tokens",
+      "targets": [
+        {
+          "expr": "increase(mpcprompt_generated_tokens_total[5m])"
+        }
+      ],
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 4
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Step Latency (s)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(mimir_step_latency_seconds_bucket[1m])) by (le))"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 16,
+        "h": 8
+      }
+    }
+  ]
+}

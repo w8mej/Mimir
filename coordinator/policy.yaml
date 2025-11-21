@@ -1,0 +1,8 @@
+
+admit:
+  - kind: sev-snp
+    measurements:
+      - allow_prefix: "abc123"   # example policy
+  - kind: intel-tdx
+    measurements:
+      - allow_prefix: "def456"

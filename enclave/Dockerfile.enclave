@@ -1,0 +1,37 @@
+FROM python:3.11-slim AS runtime
+
+# Set working directory
+WORKDIR /app
+
+# Copy and install dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy application code
+COPY . /app
+
+# Environment variables
+ENV MIMIR_SECURITY_CFG=configs/security.yaml \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Copy and prepare entrypoint
+COPY enclave/enclave_decrypt_and_start.sh /app/enclave_decrypt_and_start.sh
+RUN chmod 0755 /app/enclave_decrypt_and_start.sh
+
+# --- Security Hardening: Non-root user ---
+RUN addgroup --system appuser && adduser --system --ingroup appuser appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Expose coordinator + metrics ports
+EXPOSE 8080 9090 8081
+
+# --- Healthcheck ---
+# This checks the Prometheus metrics endpoint on port 9090 every 30s.
+# If it fails 3 consecutive times, the container will be marked unhealthy.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:9090/metrics || exit 1
+
+# Entrypoint
+ENTRYPOINT ["/app/enclave_decrypt_and_start.sh"]

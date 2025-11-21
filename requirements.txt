@@ -1,0 +1,14 @@
+cffi
+cryptography
+fastapi
+grpcio
+grpcio_tools
+numpy
+prometheus_client
+protobuf
+pydantic
+pytest
+PyYAML
+PyYAML
+streamlit
+uvicorn

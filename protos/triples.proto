@@ -1,0 +1,14 @@
+
+syntax = "proto3";
+package mimir;
+message Shape { uint32 m=1; uint32 k=2; uint32 n=3; }
+message TripleReq { Shape shape=1; }
+message TripleReply { bool ok=1; bytes a=2; bytes b=3; bytes c=4; }
+message SacrificeReq { uint32 count=1; }
+message SacrificeReply { bool ok=1; uint32 consumed=2; }
+message StatsReply { uint32 pool_size=1; uint64 sac_ok=2; uint64 sac_fail=3; }
+service TripleService {
+  rpc GetTriple(TripleReq) returns (TripleReply);
+  rpc Sacrifice(SacrificeReq) returns (SacrificeReply);
+  rpc Stats(google.protobuf.Empty) returns (StatsReply);
+}
